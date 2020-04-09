@@ -1,0 +1,71 @@
+---
+
+- name: Test remote repository
+  register: test_remote_result
+  ignore_errors: true
+  uri:
+    url: "{{ item.git }}"
+    method: GET
+
+- name: Process sync
+  when: test_remote_result.status | int == 200
+  block:
+    - name: Set project attributes
+      set_fact:
+        name: "{{ item.gitlab | basename }}"
+        path: "{{ item.gitlab | urlsplit('path') | regex_replace('^/', '') | dirname }}"
+    
+    - name: Search group
+      register: group_search
+      uri:
+        url: "{{ gitlab_api }}/api/v4/groups?search={{ path | basename }}"
+        method: GET
+        headers:
+          PRIVATE-TOKEN: "{{ gitlab_token }}"
+    
+    - name: Get group info
+      register: group_info
+      uri:
+        url: "{{ gitlab_api }}/api/v4/groups/{{ group_search.json[0].id }}"
+        method: GET
+        headers:
+          PRIVATE-TOKEN: "{{ gitlab_token }}"
+    
+    - name: Set namespace_id
+      set_fact: namespace_id={{ group_info.json.projects[0].namespace.id }}
+    
+    - name: Set JSON query
+      set_fact:
+        project_info_q: "json[?path_with_namespace=='{{ path }}/{{ name }}'].id"
+    
+    - name: Search project {{ name }}
+      register: project_info
+      uri:
+        url: "{{ gitlab_api }}/api/v4/projects?search={{ name }}"
+        method: GET
+        headers:
+          PRIVATE-TOKEN: "{{ gitlab_token }}"
+     
+    - name: Set project_id
+      set_fact: project_id="{{ (project_info | json_query(project_info_q))[0] }}"
+    
+    - name: Delete Gitlab project
+      when: project_id | length > 0
+      uri:
+        url: "{{ gitlab_api }}/api/v4/projects/{{ project_id }}"
+        method: DELETE
+        validate_certs: false
+        status_code: 202
+        headers:
+          PRIVATE-TOKEN: "{{ gitlab_token }}"
+    
+    - name: Create Gitlab project
+      uri:
+        url: "{{ gitlab_api }}/api/v4/projects?name={{ name }}&namespace_id={{ namespace_id }}&issues_access_level=disabled&merge_requests_access_level=disabled&import_url={{ item.git }}"
+        method: POST
+        validate_certs: false
+        status_code: 201
+        headers:
+          PRIVATE-TOKEN: "{{ gitlab_token }}"
+          name: "{{ name }}"
+
