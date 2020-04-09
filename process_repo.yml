@@ -46,18 +46,21 @@
         headers:
           PRIVATE-TOKEN: "{{ gitlab_token }}"
      
-    - name: Set project_id
-      set_fact: project_id="{{ (project_info | json_query(project_info_q))[0] }}"
-    
     - name: Delete Gitlab project
-      when: project_id | length > 0
-      uri:
-        url: "{{ gitlab_api }}/api/v4/projects/{{ project_id }}"
-        method: DELETE
-        validate_certs: false
-        status_code: 202
-        headers:
-          PRIVATE-TOKEN: "{{ gitlab_token }}"
+      when: project_info | json_query(project_info_q) | length > 0
+      block:
+        - name: Set project_id
+          set_fact: project_id="{{ (project_info | json_query(project_info_q))[0] }}"
+    
+        - name: Delete Gitlab project
+          when: project_id | length > 0
+          uri:
+            url: "{{ gitlab_api }}/api/v4/projects/{{ project_id }}"
+            method: DELETE
+            validate_certs: false
+            status_code: 202
+            headers:
+              PRIVATE-TOKEN: "{{ gitlab_token }}"
     
     - name: Create Gitlab project
       uri:
