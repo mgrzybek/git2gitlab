@@ -11,9 +11,8 @@ Ansible-playbook-based script to import Git repositories into Gitlab:
 1. Write a YAML file:
 
 ```YAML
-repositories:
-  - gitlab:
-    git:
+- gitlab:
+  git:
 ```
 
 2. Get Gitlab token and API endpoint
