@@ -1,0 +1,30 @@
+- name: Delete Gitlab project
+  when: project_info | json_query(project_info_q) | length > 0
+  block:
+  - name: Set project_id
+    set_fact: project_id="{{ (project_info | json_query(project_info_q))[0] }}"
+
+  - name: Delete Gitlab project
+    when: project_id | length > 0
+    uri:
+      url: '{{ gitlab_api }}/api/v4/projects/{{ project_id }}'
+      method: DELETE
+      validate_certs: false
+      status_code: 202
+      headers:
+        PRIVATE-TOKEN: '{{ gitlab_token }}'
+
+- name: Create Gitlab project
+  register: gitlab_create
+  until: gitlab_create is success
+  retries: 5
+  delay: 10
+  uri:
+    url: '{{ gitlab_api }}/api/v4/projects?name={{ name }}&namespace_id={{ namespace_id }}&issues_access_level=disabled&merge_requests_access_level=disabled&import_url={{ item.git }}'
+    method: POST
+    validate_certs: false
+    status_code: 201
+    headers:
+      PRIVATE-TOKEN: '{{ gitlab_token }}'
+      name: '{{ name }}'
+

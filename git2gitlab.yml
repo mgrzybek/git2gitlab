@@ -4,23 +4,28 @@
   hosts: localhost
   gather_facts: no
   tasks:
-    - name: Check options
-      when: configfile is undefined
-      fail: msg="configfile argument must be given"
+  - name: Set default facts
+    when: destroy_and_clone is undefined
+    set_fact:
+      destroy_and_clone: true
 
-    - name: Check options
-      when: gitlab_api is undefined
-      fail: msg="gitlab_api is undefined"
+  - name: Check options
+    when: configfile is undefined
+    fail: msg="configfile argument must be given"
 
-    - name: Check options
-      when: gitlab_token is undefined
-      fail: msg="gitlab_token is undefined"
+  - name: Check options
+    when: gitlab_api is undefined
+    fail: msg="gitlab_api is undefined"
 
-    - name: Get repositories
-      set_fact:
-        config: "{{ lookup('file', configfile) | from_yaml }}"
+  - name: Check options
+    when: gitlab_token is undefined
+    fail: msg="gitlab_token is undefined"
 
-    - name: Process repositories
-      with_items: "{{ config }}"
-      include_tasks: process_repo.yml
+  - name: Get repositories
+    set_fact:
+      config: "{{ lookup('file', configfile) | from_yaml }}"
+
+  - name: Process repositories
+    with_items: '{{ config }}'
+    include_tasks: process_repo.yml
 
