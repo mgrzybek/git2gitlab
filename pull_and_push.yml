@@ -1,0 +1,26 @@
+- name: Clone the git repo
+  git:
+    repo: '{{ item.git }}'
+    dest: /tmp/buffer
+
+- name: Add gitlab target
+  git_config:
+    repo: /tmp/buffer
+    scope: local
+    name: remote.gitlab.url
+    value: '{{ item.gitlab }}'
+
+# Pull from gitlab
+#- name: Pull from gitlab
+#  git:
+#    repo: '{{ item.gitlab }}'
+#    dest: /tmp/buffer
+#    clone: false
+#    remote: gitlab
+
+# Push git to gitlab
+#- name: Push git to gitlab
+#  command:
+#    cmd: git push --all gitlab
+#    chdir: /tmp/buffer
+
