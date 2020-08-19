@@ -1,35 +1,35 @@
-- name: Test remote repository
+- name: Process Repo | Test remote repository
   register: test_remote_result
   ignore_errors: true
   uri:
     url: '{{ item.git }}'
     method: GET
 
-- name: Process sync
+- name: Process Repo | Process sync
   when: test_remote_result.status | int == 200
   block:
-  - name: Set project attributes
+  - name: Process Repo | Set project attributes
     set_fact:
       name: '{{ item.gitlab | basename }}'
       path: "{{ item.gitlab | urlsplit('path') | regex_replace('^/', '') | dirname }}"
-  - name: Search group
+  - name: Process Repo | Search group
     register: group_search
     uri:
       url: '{{ gitlab_api }}/api/v4/groups?search={{ path | basename }}'
       method: GET
       headers:
         PRIVATE-TOKEN: '{{ gitlab_token }}'
-  - name: Get group info
+  - name: Process Repo | Get group info
     register: group_info
     uri:
       url: '{{ gitlab_api }}/api/v4/groups/{{ group_search.json[0].id }}'
       method: GET
       headers:
         PRIVATE-TOKEN: '{{ gitlab_token }}'
-  - name: Set namespace_id
+  - name: Process Repo | Set namespace_id
     set_fact: namespace_id={{ group_info.json.projects[0].namespace.id }}
 
-  - name: Set JSON query
+  - name: Process Repo | Set JSON query
     set_fact:
       project_info_q: json[?path_with_namespace=='{{ path }}/{{ name }}'].id
   - name: Search project {{ name }}
@@ -39,11 +39,10 @@
       method: GET
       headers:
         PRIVATE-TOKEN: '{{ gitlab_token }}'
-  - name: Recreate the repo
+  - name: Process Repo | Recreate the repo
     when: destroy_and_clone | lower == 'true'
     include_tasks: destroy_and_clone.yml
 
-  - name: Pull and push
+  - name: Process Repo | Pull and push
     when: destroy_and_clone | lower == 'false'
     include_tasks: pull_and_push.yml
-

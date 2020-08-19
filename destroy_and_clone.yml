@@ -1,10 +1,10 @@
-- name: Delete Gitlab project
+- name: Destroy & Clone | Delete Gitlab project
   when: project_info | json_query(project_info_q) | length > 0
   block:
-  - name: Set project_id
+  - name: Destroy & Clone | Set project_id
     set_fact: project_id="{{ (project_info | json_query(project_info_q))[0] }}"
 
-  - name: Delete Gitlab project
+  - name: Destroy & Clone | Delete Gitlab project
     when: project_id | length > 0
     uri:
       url: '{{ gitlab_api }}/api/v4/projects/{{ project_id }}'
@@ -14,7 +14,7 @@
       headers:
         PRIVATE-TOKEN: '{{ gitlab_token }}'
 
-- name: Create Gitlab project
+- name: Destroy & Clone | Create Gitlab project
   register: gitlab_create
   until: gitlab_create is success
   retries: 5
