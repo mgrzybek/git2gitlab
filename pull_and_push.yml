@@ -1,26 +1,32 @@
-- name: Clone the git repo
+- name: Pull & Push | Create temp directory
+  register: temp_dir
+  tempfile:
+    state: directory
+    suffix: git2gitlab
+
+- name: Pull & Push | Clone the git repo
   git:
     repo: '{{ item.git }}'
-    dest: /tmp/buffer
+    dest: '{{ temp_dir.path }}'
 
-- name: Add gitlab target
+- name: Pull & Push | Add gitlab target
   git_config:
-    repo: /tmp/buffer
+    repo: '{{ temp_dir.path }}'
     scope: local
     name: remote.gitlab.url
     value: '{{ item.gitlab }}'
 
-# Pull from gitlab
-#- name: Pull from gitlab
-#  git:
-#    repo: '{{ item.gitlab }}'
-#    dest: /tmp/buffer
-#    clone: false
-#    remote: gitlab
+- name: Pull & Push | Set gitlab credentials
+  shell:
+    cmd: echo "protocol={{ item.gitlab | urlsplit('scheme') }}\nhost={{ item.gitlab | urlsplit('hostname') }}\nusername=oauth2\npassword={{ gitlab_token }}" | git credential approve
+    chdir: '{{ temp_dir.path }}'
 
-# Push git to gitlab
-#- name: Push git to gitlab
-#  command:
-#    cmd: git push --all gitlab
-#    chdir: /tmp/buffer
+- name: Pull & Push | Push git to gitlab
+  command:
+    cmd: git push --all gitlab
+    chdir: '{{ temp_dir.path }}'
 
+- name: Pull & Push | Cleanup {{ temp_dir.path }}
+  file:
+    path: '{{ temp_dir.path }}'
+    state: absent
