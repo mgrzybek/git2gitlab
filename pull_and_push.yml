@@ -2,7 +2,7 @@
   register: temp_dir
   tempfile:
     state: directory
-    suffix: git2gitlab
+    suffix: .git2gitlab
 
 - name: Pull & Push | Clone the git repo
   git:
